@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -41,28 +40,37 @@ h1{font-size:14px;font-weight:500;letter-spacing:.14em;color:#666;margin-bottom:
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:#333;border-radius:2px;}
-.api-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem;flex-wrap:wrap;}
-.api-input{flex:1;min-width:200px;font-family:monospace;font-size:11px;background:#111;border:0.5px solid #2e2e2e;border-radius:6px;padding:6px 10px;color:#aaa;outline:none;}
-.api-input:focus{border-color:#4ade80;}
-.api-label{font-size:10px;color:#555;white-space:nowrap;}
-.api-hint{font-size:10px;color:#3a5a3a;margin-top:4px;}
-a.api-link{color:#4ade80;text-decoration:none;}
-a.api-link:hover{text-decoration:underline;}
+.config-box{background:#111;border:0.5px solid #2a2a2a;border-radius:10px;padding:12px 14px;margin-bottom:1rem;}
+.config-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.config-row:last-child{margin-bottom:0;}
+.cfg-label{font-size:10px;color:#555;white-space:nowrap;min-width:90px;}
+.cfg-input{flex:1;min-width:200px;font-family:monospace;font-size:11px;background:#0a0a0a;border:0.5px solid #2e2e2e;border-radius:6px;padding:6px 10px;color:#aaa;outline:none;}
+.cfg-input:focus{border-color:#4ade80;}
+.cfg-hint{font-size:10px;color:#3a5a3a;margin-top:2px;}
+a.cfg-link{color:#4ade80;text-decoration:none;}
+a.cfg-link:hover{text-decoration:underline;}
 </style>
 </head>
 <body>
 
-<h1>⬡ ADN fotográfico · extractor json · Mi API</h1>
+<h1>⬡ ADN fotográfico · extractor json · Mi API + Claude</h1>
 
-<div class="api-row">
-  <span class="api-label">MI API:</span>
-  <input class="api-input" type="text" id="api-url" placeholder="http://localhost:5000/extraer-json" autocomplete="off"/>
-  <button class="btn btn-ai" onclick="saveUrl()">guardar</button>
-  <span id="key-status" style="font-size:10px;color:#4ade80;"></span>
+<div class="config-box">
+  <div class="config-row">
+    <span class="cfg-label">ANTHROPIC KEY:</span>
+    <input class="cfg-input" type="password" id="api-key" placeholder="sk-ant-..." autocomplete="off"/>
+    <button class="btn btn-ai" onclick="saveConfig()">guardar</button>
+    <span id="key-status" style="font-size:10px;color:#4ade80;"></span>
+  </div>
+  <div class="config-row">
+    <span class="cfg-label">URL DE MI API:</span>
+    <input class="cfg-input" type="text" id="api-url" placeholder="http://localhost:5000/extraer-json" autocomplete="off"/>
+  </div>
+  <p class="cfg-hint">
+    Key gratis en <a class="cfg-link" href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> · 
+    La key se guarda solo en tu navegador, nunca sale de tu equipo.
+  </p>
 </div>
-<p class="api-hint">URL de tu servidor. Por defecto: <span style="color:#4ade80">http://localhost:5000/extraer-json</span> — no requiere token.</p>
-
-<br>
 
 <div class="app">
   <div class="panel-row">
@@ -90,7 +98,7 @@ a.api-link:hover{text-decoration:underline;}
           <span id="img-meta" style="font-size:10px;color:#444;"></span>
           <button class="btn" id="btn-clear" style="display:none;margin-left:auto;" onclick="clearAll()">limpiar</button>
           <button class="btn" id="btn-full" style="display:none;" onclick="extractFull()">extraer todo</button>
-          <button class="btn btn-ai" id="btn-ai" style="display:none;" onclick="runAI()">✦ analizar con mi API</button>
+          <button class="btn btn-ai" id="btn-ai" style="display:none;" onclick="runAI()">✦ analizar con Claude</button>
         </div>
       </div>
     </div>
@@ -103,7 +111,7 @@ a.api-link:hover{text-decoration:underline;}
       </div>
       <div class="panel-body">
         <div class="json-out" id="json-out">
-          <div class="placeholder-msg">Sube una foto y arrastra sobre la región que quieres analizar.<br><br>Luego pulsa <strong style="color:#4ade80">✦ analizar con mi API</strong> para obtener el JSON semántico completo.</div>
+          <div class="placeholder-msg">Sube una foto y arrastra sobre la región que quieres analizar.<br><br>Luego pulsa <strong style="color:#4ade80">✦ analizar con Claude</strong> para obtener el JSON semántico completo.</div>
         </div>
       </div>
     </div>
@@ -147,20 +155,24 @@ var canvasWrap=document.getElementById('canvas-wrap');
 var jsonOut=document.getElementById('json-out');
 var dz=document.getElementById('drop-zone');
 
-// URL de la API propia
-function saveUrl(){
+// Guardar configuración
+function saveConfig(){
+  var k=document.getElementById('api-key').value.trim();
   var u=document.getElementById('api-url').value.trim()||'http://localhost:5000/extraer-json';
+  if(k) localStorage.setItem('adn_claude_key',k);
   localStorage.setItem('adn_api_url',u);
   document.getElementById('api-url').value=u;
   var st=document.getElementById('key-status');
-  st.textContent='guardada';
+  st.textContent='✓ guardado';
   setTimeout(function(){st.textContent='';},2000);
 }
 (function(){
-  var s=localStorage.getItem('adn_api_url');
-  if(s){document.getElementById('api-url').value=s;document.getElementById('key-status').textContent='cargada';}
-  else{document.getElementById('api-url').value='http://localhost:5000/extraer-json';}
+  var k=localStorage.getItem('adn_claude_key');
+  var u=localStorage.getItem('adn_api_url');
+  if(k){document.getElementById('api-key').value=k;document.getElementById('key-status').textContent='✓ cargada';}
+  document.getElementById('api-url').value=u||'http://localhost:5000/extraer-json';
 })();
+
 // Carga de imagen
 document.getElementById('file-inp').addEventListener('change',function(e){
   if(e.target.files&&e.target.files[0]) loadImage(e.target.files[0]);
@@ -189,7 +201,7 @@ function loadImage(file){
     document.getElementById('btn-clear').style.display='';
     document.getElementById('btn-full').style.display='';
     document.getElementById('dot-left').classList.add('active');
-    jsonOut.innerHTML='<div class="placeholder-msg">Arrastra sobre la imagen para seleccionar una región,<br>o pulsa "extraer todo" → luego "✦ analizar con mi API".</div>';
+    jsonOut.innerHTML='<div class="placeholder-msg">Arrastra sobre la imagen para seleccionar una región,<br>o pulsa "extraer todo" → luego "✦ analizar con Claude".</div>';
   };
   imgEl.onerror=function(){alert('No se pudo cargar la imagen.');};
   imgEl.src=url;
@@ -261,16 +273,22 @@ function extractRegion(sx,sy,sw,sh){
   document.getElementById('dot-right').classList.add('active');
 }
 
-// ─── Análisis con Mi API ────────────────────────────────────────────────────
+// ─── Análisis con Mi API + Claude ─────────────────────────────────────────────
 async function runAI(){
-  var apiUrl=(document.getElementById('api-url').value.trim()||'http://localhost:5000/extraer-json');
+  var apiKey=document.getElementById('api-key').value.trim();
+  var apiUrl=document.getElementById('api-url').value.trim()||'http://localhost:5000/extraer-json';
+
+  if(!apiKey){
+    alert('Ingresa tu Anthropic API Key.\nObtén una en: console.anthropic.com/settings/keys');
+    return;
+  }
   if(!imgEl||!lastRegion){alert('Primero selecciona una región o usa "extraer todo".');return;}
 
   var btn=document.getElementById('btn-ai');
   btn.disabled=true;btn.textContent='analizando...';
   document.getElementById('dot-right').className='status-dot loading';
 
-  // Recortar región seleccionada
+  // Recortar región
   var scaleX=imgW/canvasEl.width,scaleY=imgH/canvasEl.height;
   var rx=Math.round(lastRegion.sx*scaleX),ry=Math.round(lastRegion.sy*scaleY);
   var rw=Math.min(Math.round(lastRegion.sw*scaleX),imgW-rx);
@@ -281,21 +299,22 @@ async function runAI(){
   tmp.getContext('2d').drawImage(imgEl,rx,ry,rw,rh,0,0,tmp.width,tmp.height);
 
   try{
-    // Convertir canvas a Blob y enviar como multipart/form-data
+    // Enviar imagen como multipart con la key en el header
     var blob=await new Promise(function(res){tmp.toBlob(function(b){res(b);},'image/jpeg',0.85);});
     var form=new FormData();
     form.append('imagen',blob,'region.jpg');
 
-    var res=await fetch(apiUrl,{method:'POST',body:form});
+    var res=await fetch(apiUrl,{
+      method:'POST',
+      headers:{'X-Api-Key': apiKey},
+      body:form
+    });
+
     if(!res.ok){
       var er=await res.text();
-      throw new Error('HTTP '+res.status+' — '+er.slice(0,200));
+      throw new Error('HTTP '+res.status+' — '+er.slice(0,300));
     }
-    var data=await res.json();
-
-    // Normalizar respuesta: acepta {semantica:{...}} o directamente el objeto
-    var parsed=data.semantica||data;
-    if(data.estructura) parsed.estructura=data.estructura;
+    var parsed=await res.json();
 
     // Enriquecer con datos técnicos locales
     parsed.tecnico={
@@ -314,11 +333,12 @@ async function runAI(){
     var hint='';
     if(msg.includes('Failed to fetch')||msg.includes('NetworkError')) hint=' · ¿Está corriendo tu API en '+apiUrl+'?';
     if(msg.includes('CORS')) hint=' · Habilita CORS en tu API (app.use(cors())).';
-    if(msg.includes('404')) hint=' · Endpoint no encontrado. Verifica la URL.';
+    if(msg.includes('401')) hint=' · API Key incorrecta o no enviada.';
     jsonOut.innerHTML='<div class="placeholder-msg" style="color:#ef4444;">✗ Error: '+msg.replace(/</g,'&lt;')+hint+'</div>';
   }
-  btn.disabled=false;btn.textContent='✦ analizar con mi API';
+  btn.disabled=false;btn.textContent='✦ analizar con Claude';
 }
+
 function renderJson(obj){
   var s=JSON.stringify(obj,null,2);
   jsonOut.textContent=s;
